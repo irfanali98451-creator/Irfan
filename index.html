@@ -286,8 +286,8 @@ dialog[open]{animation:dlg .22s var(--ease)} dialog[open]::backdrop{animation:fa
 .ln .t .n .pill{margin-left:4px}
 
 /* ============ Dost (AI companion) ============ */
-.chat{display:flex;flex-direction:column;height:calc(100dvh - 190px);min-height:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-1);overflow:hidden}
-@media (max-width:899px){.chat{height:calc(100dvh - 230px)}}
+.chat{display:none}
+
 .chat-log{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
 .msg{display:flex;gap:10px;align-items:flex-end;max-width:85%} .msg.me{align-self:flex-end;flex-direction:row-reverse} .msg.sys{align-self:stretch;max-width:100%;justify-content:center}
 .bubble{padding:10px 14px;border-radius:16px;font-size:15px;line-height:1.5;background:var(--surface-2);color:var(--ink);border-bottom-left-radius:6px}
@@ -299,6 +299,18 @@ dialog[open]{animation:dlg .22s var(--ease)} dialog[open]::backdrop{animation:fa
 .chat-in{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--surface)} .chat-in input{flex:1;min-width:0;border:1.5px solid var(--line-2);border-radius:999px;padding:11px 16px;background:var(--surface);font-size:16px} .chat-in input:focus{border-color:var(--brand);outline:0} .chat-in .btn{border-radius:999px;width:46px;padding:0} .chat-in .ic{width:18px;height:18px}
 .typing{display:flex;gap:4px;padding:12px 14px} .typing i{width:7px;height:7px;border-radius:50%;background:var(--ink-3);animation:blink 1.2s infinite} .typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+/* Dost floating assistant */
+.dost-fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:6;display:flex;align-items:center;gap:8px;padding:12px 16px 12px 14px;border:0;border-radius:999px;background:var(--navy);color:var(--on-navy);font-weight:700;font-size:14px;box-shadow:0 14px 30px -10px rgba(23,32,51,.6);cursor:pointer}
+.dost-fab .ic{width:20px;height:20px;color:#5FE3B8}
+@media (min-width:900px){.dost-fab{bottom:24px}}
+.dost-panel{position:fixed;z-index:7;background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-2);display:flex;flex-direction:column;overflow:hidden;left:0;right:0;bottom:0;top:max(12px,env(safe-area-inset-top,0px));border-radius:var(--r-lg) var(--r-lg) 0 0}
+@media (min-width:900px){.dost-panel{left:auto;top:auto;right:24px;bottom:24px;width:420px;height:min(680px,calc(100vh - 48px));border-radius:var(--r-lg)}}
+.dost-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.dost-head .ibtn{width:34px;height:34px} .dost-head .ibtn .ic{width:16px;height:16px} .dost-head .ibtn.on{background:var(--brand-soft);color:var(--brand-deep);border-color:var(--brand)}
+.dost-panel .chat-log{padding-bottom:12px} .dost-panel .suggest{margin-left:0}
+.chat-in .mic{border-radius:999px;width:46px;padding:0;color:var(--ink-2)} .chat-in .mic.on{background:var(--down-soft);color:var(--down);border-color:var(--down);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,64,58,.35)}50%{box-shadow:0 0 0 8px rgba(217,64,58,0)}}
+body.dost-open .fab{display:none!important}
 </style>
 </head>
 <body>
@@ -308,6 +320,15 @@ dialog[open]{animation:dlg .22s var(--ease)} dialog[open]::backdrop{animation:fa
 </div>
 <div id="moreHost"></div>
 <dialog id="dlgForm"></dialog>
+<datalist id="userList"></datalist>
+<button id="dostFab" class="dost-fab" hidden aria-label="Talk to Dost" data-dost-open><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg><span>Dost</span></button>
+<section id="dostPanel" class="dost-panel" hidden aria-label="Dost, your money friend">
+  <header class="dost-head"><div class="row" style="gap:10px"><span class="ic-tile" style="width:34px;height:34px;background:var(--brand);color:#fff" id="dostAvatar"></span><div><b>Dost</b><div class="xs muted" id="dostSub">Your Gilgiti money friend</div></div></div>
+    <div class="row" style="gap:4px"><button class="ibtn" id="dostLive" title="Live mode: hands-free conversation" aria-pressed="false"></button><button class="ibtn" id="dostMute" title="Read replies aloud" aria-pressed="true"></button><button class="ibtn" id="dostClear" title="Clear chat"></button><button class="ibtn" id="dostClose" aria-label="Close"></button></div></header>
+  <div class="chat-log" id="chatLog"></div>
+  <form class="chat-in" id="chatForm"><button type="button" class="btn mic" id="dostMic" aria-label="Speak"></button><input id="chatText" placeholder="Yaar, 400 ka petrol add kar do…" autocomplete="off" maxlength="1000"><button class="btn primary" id="chatSend" aria-label="Send"></button></form>
+</section>
+
 <div class="toast" id="toast" role="status"></div>
 
 <dialog id="dlgConfirm" class="confirm"><div class="sheet"><h2 id="cfTitle">Are you sure?</h2><p id="cfMsg" class="muted" style="margin:0 0 4px"></p><div class="field" id="cfTypeWrap" hidden style="margin-top:12px"><label for="cfType" id="cfTypeLbl">Type the name to confirm</label><input id="cfType" autocomplete="off" autocapitalize="off"></div><div class="actions"><button type="button" class="btn" data-cf="0">Cancel</button><button type="button" class="btn danger solid" id="cfOk" data-cf="1">Delete</button></div></div></dialog>
@@ -413,6 +434,10 @@ const PATHS = {
   Education:'M22 10 12 5 2 10l10 5 10-5zM6 12v5c3 3 9 3 12 0v-5', Wallet:'M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 3H8M16 13h.01',
 };
 PATHS.send = 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z';
+PATHS.mic = 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8';
+PATHS.live = 'M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4';
+PATHS.speaker = 'M11 5 6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14';
+PATHS.speakerOff = 'M11 5 6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6';
 PATHS.Family = PATHS.users;
 const ic = (n, cls='ic') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${PATHS[n] || PATHS.Other}"/></svg>`;
 const CATS = ['Food','Travel','Rent','Groceries','Bills','Fun','Gifts','Health','Trip','Other'];
@@ -792,14 +817,14 @@ async function act(label, fn, btn) {
 function render() {
   window.__state = state;
   if (!loaded) return;
-  if (!signedIn()) { shell.dataset.view = 'signin'; navEl.innerHTML = ''; content.innerHTML = renderSignIn(); $('#siName')?.focus({preventScroll:true}); return; }
+  if (!signedIn()) { shell.dataset.view = 'signin'; navEl.innerHTML = ''; dostClose(); $('#dostFab').hidden = true; content.innerHTML = renderSignIn(); $('#siName')?.focus({preventScroll:true}); return; }
   if (!hasFull(state.role) && route !== 'shared') { route = 'shared'; lsSet('hisaab:route', route); }
   navEl.innerHTML = renderNav(); if (!$('#dlgMore')) $('#moreHost').innerHTML = renderMore(); else $('#moreHost').innerHTML = renderMore();
+  renderDostFab();
   if (route === 'shared') { const g = cur(); if (currentId && !g) currentId = null; shell.dataset.view = g ? 'group' : 'home'; content.innerHTML = `<div class="shared"><aside>${renderSide()}</aside><main>${g ? renderGroup(g) : renderWelcome()}</main></div>`; return; }
   shell.dataset.view = 'page';
-  if (route === 'ai' && ai.loadedFor !== auth.name) { aiLoad(); ai.loadedFor = auth.name; if (aiAllowed() && ai.status == null) API.aiStatus().then(r => { ai.status = !!r.ok; renderAi(); }).catch(() => { ai.status = false; renderAi(); }); }
-  content.innerHTML = ({overview: renderOverview, ai: renderAiPage, transactions: renderTransactions, plan: renderPlan, family: renderFamily, wealth: renderWealth, debts: renderDebts, insights: renderInsights, settings: renderSettings}[route] || renderOverview)();
-  if (route === 'ai') renderAi();
+  content.innerHTML = ({overview: renderOverview, transactions: renderTransactions, plan: renderPlan, family: renderFamily, wealth: renderWealth, debts: renderDebts, insights: renderInsights, settings: renderSettings}[route] || renderOverview)();
+  renderDostFab();
 }
 const refreshBtn = () => `<button class="ibtn ${syncing ? 'spin' : ''}" data-refresh aria-label="Refresh" title="Refresh">${ic('refresh')}</button>`;
 const gearBtn = () => `<button class="ibtn" data-settings aria-label="Connection settings" title="Connection">${ic('settings')}</button>`;
@@ -934,8 +959,8 @@ const RELATIONS = ['Brother','Sister','Mother','Father','Spouse','Child','Relati
 const RESP_CATS = [['tuition','Tuition / semester fee'],['tuition','Admission fee'],['tuition','Exam fee'],['education','Books & supplies'],['transport','Transport'],['family_support','Household contribution'],['groceries','Family groceries'],['family_medical','Medical'],['family_support','Other support']];
 
 /* ============ Routing ============ */
-const ROUTES = [['overview','Overview','home'],['ai','Dost','bulb'],['transactions','Transactions','list'],['plan','Plan','target'],['family','Family','users'],['wealth','Wealth','trend'],['debts','Debts','arrows'],['shared','Shared','split'],['insights','Insights','bulb'],['settings','Settings','settings']];
-const MOBILE_TABS = ['overview','ai','transactions','family'];
+const ROUTES = [['overview','Overview','home'],['transactions','Transactions','list'],['plan','Plan','target'],['family','Family','users'],['wealth','Wealth','trend'],['debts','Debts','arrows'],['shared','Shared','split'],['insights','Insights','bulb'],['settings','Settings','settings']];
+const MOBILE_TABS = ['overview','transactions','plan','family'];
 let route = lsGet('hisaab:route') || 'overview', viewMonth = fin.ym(today()), txFilter = {q:'', type:'all', account:'all', cat:'all', from:'', to:''};
 function go(r) { route = allowedRoutes().some(x => x[0] === r) ? r : (hasFull(state.role) ? 'overview' : 'shared'); lsSet('hisaab:route', route); if (route !== 'shared') currentId = null; render(); scrollTo(0,0); }
 const allowedRoutes = () => hasFull(state.role) ? ROUTES : ROUTES.filter(r => r[0] === 'shared');
@@ -977,7 +1002,7 @@ function renderOverview() {
   const setup = noAcc ? `<div class="banner">${ic('bulb')} Start by adding an account (cash or bank) with its current balance in <a href="#" data-route="settings">Settings</a>, then record your salary and expenses. Safe-to-spend needs real balances.</div>` : '';
   return pageHead('Overview', `<button class="btn primary" data-add-tx>${ic('plus')} Add</button>`, new Date(t + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', day:'numeric', month:'long'})) + backendBanner() + setup + `
   <section class="hero"><p class="lede">Safe to spend · next ${sts.horizon} days</p><p class="big num ${sts.safe < 0 ? 'neg' : ''}">${money(sts.safe)}</p><p class="sub">${money(sts.liquid)} liquid − ${money(sts.totalDeductions)} reserved for commitments, savings and your cash reserve</p>
-    <div class="tools"><button class="btn" data-route="plan">${ic('target')} See the breakdown</button><button class="btn" data-add-tx>${ic('plus')} Add transaction</button><button class="btn" data-route="ai">${ic('bulb')} Ask Dost</button></div>
+    <div class="tools"><button class="btn" data-route="plan">${ic('target')} See the breakdown</button><button class="btn" data-add-tx>${ic('plus')} Add transaction</button><button class="btn" data-dost-open>${ic('bulb')} Ask Dost</button></div>
     <div class="stats"><div><div class="k">Income this month</div><div class="v num">${money(m.income)}</div></div><div><div class="k">Spent</div><div class="v num">${money(m.consumption)}</div></div><div><div class="k">Family</div><div class="v num">${money(m.family)}</div></div><div><div class="k">Saved + invested</div><div class="v num">${money(m.savings + m.investments)}</div></div><div><div class="k">Net worth</div><div class="v num">${money(nw.net)}</div></div></div></section>
   <div class="grid2col">
     <div class="section"><div class="section-h"><h3>Due soon</h3><a href="#" class="sm" data-route="insights" data-sub="calendar">Calendar</a></div>${due.length ? `<div class="card line-list">${due.map(d => `<div class="ln">${tile(...kindTile(d.kind))}<span class="t"><span class="n">${esc(d.label)}</span><span class="d ${d.overdue?'neg':''}">${d.overdue ? 'Overdue · ' : ''}${niceDate(d.date)}</span></span><span class="rt"><span class="amt num">${money(d.amount)}</span><button class="btn sm" data-due-action="${d.action}" data-id="${d.id}">${d.kind==='income'?'Received':d.kind==='goal'?'Add savings':'Pay'}</button></span></div>`).join('')}</div>` : emptyCard('Nothing due in the next 14 days', 'Family fees, bills and loan dates you add will show up here.')}</div>
@@ -1830,7 +1855,7 @@ async function commit(fn) { const s = await fn(); if (s && s.groups) { state = s
 
 /* ---- conversation loop ---- */
 function aiPush(role, parts) { ai.contents.push({role, parts}); }
-function aiLog(entry) { ai.log.push({...entry, t: Date.now()}); aiSave(); renderAi(); }
+function aiLog(entry) { ai.log.push({...entry, t: Date.now()}); aiSave(); renderAi(); if (entry.who === 'dost') voice.say(entry.text); }
 async function aiSend(text) {
   text = String(text || '').trim(); if (!text || ai.busy) return;
   if (!aiAllowed()) return;
@@ -1848,8 +1873,8 @@ async function aiTurn(retrying) {
       if (needConfirm.length) { ai.pending = calls; aiLog({who:'confirm', calls}); ai.busy = false; renderAi(); return; }
       await aiRun(calls);
     }
-  } catch (e) { ai.error = e.message; }
-  ai.busy = false; renderAi();
+  } catch (e) { ai.error = e.message; voice.onError(); }
+  ai.busy = false; renderAi(); voice.afterTurn();
 }
 async function aiRun(calls) {
   const responses = [];
@@ -1882,33 +1907,70 @@ function aiDescribe(c) {
 }
 
 /* ---- UI ---- */
-const AI_SUGGEST = ['Aaj 650 ka khana khaya', 'Is month paisay kahan zyada lag rahay hain?', 'Salary ke baad kitna safely spend kar sakta hoon?', 'Ali ki fees 8,000 pay ki hai, add kar do', 'Mera is hafte ka review kar do', 'Har month 10,000 save karne ka plan bana do'];
-function renderAiPage() {
-  if (!hasFull(state.role)) return pageHead('Dost', '') + emptyCard('Dost is for full-access accounts', 'The AI companion works on your personal finances, which this account does not have.');
-  if (mode() === 'local' && !window.__aiMock) return pageHead('Dost', '') + emptyCard('Dost needs your Google Sheet', 'The AI runs on the server side of your Sheet so the key stays private. Connect a Sheet in Settings and add a Gemini key in Apps Script.');
-  return pageHead('Dost', `<button class="btn sm" data-ai-clear ${ai.log.length ? '' : 'disabled'}>${ic('trash')} Clear chat</button>`, 'Your Gilgiti money friend · talks English or Roman Urdu') + `<div class="chat"><div class="chat-log" id="chatLog"></div><form class="chat-in" id="chatForm"><input id="chatText" placeholder="Yaar, 400 ka petrol add kar do…" autocomplete="off" maxlength="1000" ${ai.busy ? 'disabled' : ''}><button class="btn primary" id="chatSend" ${ai.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button></form></div>`;
+const AI_SUGGEST = ['Aaj 650 ka khana khaya', 'Is month paisay kahan zyada lag rahay hain?', 'Salary ke baad kitna safely spend kar sakta hoon?', 'Ali ki fees 8,000 pay ki hai, add kar do', 'Mera is hafte ka review kar do', 'Ek joke sunao yaar'];
+let dostOpen = false;
+function renderDostFab() { const fab = $('#dostFab'); if (!fab) return; const allowed = signedIn() && hasFull(state.role); fab.hidden = !allowed; if (!allowed) dostClose(); }
+function dostOpenPanel() {
+  if (!signedIn() || !hasFull(state.role)) return;
+  if (ai.loadedFor !== auth.name) { aiLoad(); ai.loadedFor = auth.name; if (aiAllowed() && ai.status == null) API.aiStatus().then(r => { ai.status = !!r.ok; renderAi(); }).catch(() => { ai.status = false; renderAi(); }); }
+  dostOpen = true; const p = $('#dostPanel'); p.hidden = false; $('#dostFab').hidden = true; document.body.classList.add('dost-open');
+  $('#dostAvatar').innerHTML = ic('bulb'); $('#dostClose').innerHTML = ic('x'); $('#dostClear').innerHTML = ic('trash'); $('#chatSend').innerHTML = ic('send'); $('#dostMic').innerHTML = ic('mic'); $('#dostLive').innerHTML = ic('live'); $('#dostMute').innerHTML = ic(voice.speak ? 'speaker' : 'speakerOff');
+  $('#dostMic').hidden = !voice.supported; $('#dostLive').hidden = !voice.supported;
+  renderAi(); setTimeout(() => $('#chatText')?.focus({preventScroll:true}), 50);
 }
+function dostClose() { if (!dostOpen) return; dostOpen = false; voice.stopLive(); $('#dostPanel').hidden = true; document.body.classList.remove('dost-open'); renderDostFab(); }
 function renderAi() {
-  if (route !== 'ai') return; const log = $('#chatLog'); if (!log) { render(); return; }
+  if (!dostOpen) return; const log = $('#chatLog'); if (!log) return;
   const dostAv = `<span class="ic-tile" style="width:30px;height:30px;background:var(--brand-soft);color:var(--brand)">${ic('bulb')}</span>`;
-  const welcome = `<div class="msg dost">${dostAv}<div class="bubble"><b>Assalam o alaikum, ${esc(auth.name)}!</b> Main Dost hoon, tumhara money wala yaar. Expense bolo, main add kar dunga; ya poocho ke paisay kahan ja rahay hain. ${ai.status === false ? '<span class="neg">Abhi AI key set nahi hai: Apps Script → Project Settings → Script properties → GEMINI_API_KEY.</span>' : ''}</div></div><div class="suggest">${AI_SUGGEST.map(s => `<button class="chip" data-ai-suggest="${esc(s)}">${esc(s)}</button>`).join('')}</div>`;
+  const welcome = `<div class="msg dost">${dostAv}<div class="bubble"><b>Assalam o alaikum, ${esc(auth.name)}!</b> Main Dost hoon, tumhara money wala yaar. Expense bolo, main add kar dunga; ya poocho ke paisay kahan ja rahay hain. ${mode() === 'local' && !window.__aiMock ? '<span class="neg">Dost ko Google Sheet connection chahiye (AI server side chalta hai). Settings → Profile & connection.</span>' : ai.status === false ? '<span class="neg">Abhi AI key set nahi hai: Apps Script → Project Settings → Script properties → GEMINI_API_KEY.</span>' : ''}</div></div><div class="suggest">${AI_SUGGEST.map(s => `<button class="chip" data-ai-suggest="${esc(s)}">${esc(s)}</button>`).join('')}</div>`;
   log.innerHTML = welcome + ai.log.map(e => e.who === 'me' ? `<div class="msg me"><div class="bubble">${esc(e.text)}</div></div>`
     : e.who === 'dost' ? `<div class="msg dost">${dostAv}<div class="bubble">${esc(e.text).replace(/\n/g,'<br>')}</div></div>`
     : e.who === 'action' ? `<div class="msg sys"><span class="receipt ${e.ok ? 'ok' : 'bad'}">${ic(e.ok ? 'check' : 'alert')} ${esc(e.text)}</span></div>`
     : e.who === 'confirm' ? `<div class="msg sys"><div class="card confirm-card"><div class="b" style="margin-bottom:6px">Dost wants to:</div>${e.calls.map(c => `<div class="sm">• ${esc(aiDescribe(c))}</div>`).join('')}${ai.pending && ai.pending === e.calls || (ai.pending && ai.pending[0].id === e.calls[0].id) ? `<div class="actions" style="margin-top:10px;justify-content:flex-start"><button class="btn primary sm" data-ai-confirm="1">Confirm</button><button class="btn sm" data-ai-confirm="0">Cancel</button></div>` : `<div class="xs muted" style="margin-top:6px">${e.done || 'answered'}</div>`}</div></div>` : '').join('')
     + (ai.busy ? `<div class="msg dost">${dostAv}<div class="bubble typing"><i></i><i></i><i></i></div></div>` : '')
     + (ai.error ? `<div class="msg sys"><span class="receipt bad">${ic('alert')} ${esc(ai.error)} <button class="btn sm" data-ai-retry>Retry</button></span></div>` : '');
-  const inp = $('#chatText'), btn = $('#chatSend'); if (inp) { inp.disabled = ai.busy; btn.disabled = ai.busy; } const clr = $('[data-ai-clear]'); if (clr) clr.disabled = !ai.log.length;
+  const inp = $('#chatText'), btn = $('#chatSend'); if (inp) { inp.disabled = ai.busy; btn.disabled = ai.busy; } const clr = $('#dostClear'); if (clr) clr.disabled = !ai.log.length;
+  $('#dostSub').textContent = voice.live ? (voice.listening ? 'Live · listening…' : ai.busy ? 'Live · thinking…' : voice.speaking ? 'Live · speaking…' : 'Live mode on') : voice.listening ? 'Listening…' : 'Your Gilgiti money friend'; $('#dostMic').classList.toggle('on', voice.listening); $('#dostLive').setAttribute('aria-pressed', String(voice.live)); $('#dostLive').classList.toggle('on', voice.live);
   log.scrollTop = log.scrollHeight;
 }
 document.addEventListener('submit', ev => { if (ev.target.id !== 'chatForm') return; ev.preventDefault(); const v = $('#chatText').value; $('#chatText').value = ''; aiSend(v); });
 document.addEventListener('click', async ev => {
-  const t = ev.target.closest('[data-ai-suggest],[data-ai-confirm],[data-ai-clear],[data-ai-retry]'); if (!t) return; const d = t.dataset;
+  const t = ev.target.closest('[data-ai-suggest],[data-ai-confirm],[data-ai-clear],[data-ai-retry],[data-dost-open],#dostClose,#dostClear,#dostMic,#dostLive,#dostMute'); if (!t) return; const d = t.dataset;
+  if ('dostOpen' in d) { dostOpenPanel(); return; } if (t.id === 'dostClose') { dostClose(); return; } if (t.id === 'dostMic') { voice.toggleListen(); return; } if (t.id === 'dostLive') { voice.toggleLive(); return; } if (t.id === 'dostMute') { voice.speak = !voice.speak; lsSet('hisaab:dost:speak', voice.speak ? '1' : '0'); if (!voice.speak) voice.stopSpeaking(); t.innerHTML = ic(voice.speak ? 'speaker' : 'speakerOff'); t.setAttribute('aria-pressed', String(voice.speak)); return; }
   if (d.aiSuggest) aiSend(d.aiSuggest);
   else if (d.aiConfirm !== undefined) aiConfirm(d.aiConfirm === '1');
-  else if ('aiClear' in d) { if (await confirmAsync('Clear this chat?', 'Dost forgets this conversation. Your transactions are not affected.', 'Clear')) { ai.contents = []; ai.log = []; ai.pending = null; ai.error = ''; aiSave(); renderAi(); } }
+  else if ('aiClear' in d || t.id === 'dostClear') { if (await confirmAsync('Clear this chat?', 'Dost forgets this conversation. Your transactions are not affected.', 'Clear')) { ai.contents = []; ai.log = []; ai.pending = null; ai.error = ''; aiSave(); renderAi(); } }
   else if ('aiRetry' in d) { ai.error = ''; const last = ai.contents[ai.contents.length - 1]; if (last && last.role === 'user') aiTurn(true); else renderAi(); }
 });
+
+/* ---- Voice: Web Speech API (recognition + synthesis). Live mode = listen → answer → speak → listen. ---- */
+const voice = {
+  supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition), rec: null, listening: false, live: false, speaking: false, speak: lsGet('hisaab:dost:speak') !== '0', lang: lsGet('hisaab:dost:lang') || 'en-PK',
+  start() {
+    if (!this.supported || this.listening) return; const R = window.SpeechRecognition || window.webkitSpeechRecognition; const r = this.rec = new R(); r.lang = this.lang; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+    let finalText = ''; r.onstart = () => { this.listening = true; this.stopSpeaking(); renderAi(); };
+    r.onresult = e => { let interim = ''; for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) finalText += t; else interim += t; } const inp = $('#chatText'); if (inp) inp.value = (finalText + interim).trim(); };
+    r.onerror = e => { this.listening = false; if (e.error === 'not-allowed') { this.live = false; toast('Microphone permission is needed for voice'); } renderAi(); };
+    r.onend = () => { this.listening = false; const text = (finalText || ($('#chatText')?.value || '')).trim(); const inp = $('#chatText'); if (inp) inp.value = ''; renderAi(); if (text) aiSend(text); else if (this.live && dostOpen) setTimeout(() => this.start(), 400); };
+    try { r.start(); } catch { this.listening = false; }
+  },
+  stop() { try { this.rec && this.rec.stop(); } catch {} this.listening = false; },
+  toggleListen() { if (this.listening) this.stop(); else this.start(); },
+  toggleLive() { this.live = !this.live; if (this.live) { this.speak = true; toast('Live mode: just talk, Dost replies and listens again'); this.start(); } else { this.stop(); this.stopSpeaking(); } renderAi(); },
+  stopLive() { this.live = false; this.stop(); this.stopSpeaking(); },
+  say(text) {
+    if (!this.speak || !('speechSynthesis' in window) || !dostOpen) return;
+    const clean = String(text).replace(/[*_`#]/g, '').replace(/https?:\S+/g, '').slice(0, 600); if (!clean) return;
+    this.stopSpeaking(); const u = new SpeechSynthesisUtterance(clean); const vs = speechSynthesis.getVoices(); const urdu = /[\u0600-\u06FF]/.test(clean);
+    u.lang = urdu ? 'ur-PK' : 'en-IN'; u.voice = vs.find(v => v.lang === u.lang) || vs.find(v => v.lang.startsWith(urdu ? 'ur' : 'en-IN')) || vs.find(v => v.lang.startsWith('en-GB')) || null; u.rate = 1; u.pitch = 1;
+    u.onstart = () => { this.speaking = true; renderAi(); }; u.onend = u.onerror = () => { this.speaking = false; renderAi(); if (this.live && dostOpen && !ai.busy && !ai.pending) setTimeout(() => this.start(), 250); };
+    speechSynthesis.speak(u);
+  },
+  stopSpeaking() { if ('speechSynthesis' in window) speechSynthesis.cancel(); this.speaking = false; },
+  afterTurn() { if (this.live && dostOpen && !this.speaking && !ai.pending && !ai.busy && !ai.error && (!this.speak || !('speechSynthesis' in window))) setTimeout(() => this.start(), 300); },
+  onError() { if (this.live) { this.live = false; renderAi(); } },
+};
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => {};
 /* ---- Boot ---- */
 refresh();
 setInterval(() => { if (mode() !== 'local' && document.visibilityState === 'visible') refresh(true); }, 45000);
