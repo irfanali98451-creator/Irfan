@@ -66,23 +66,28 @@ h1,h2,h3,.top h1,.section-h h3,.hero .big,.totals .val,.glist .name,.month b,.sh
 #shell{display:grid;grid-template-columns:1fr;min-height:100vh;min-height:100dvh}
 #content{padding:16px 16px 100px;max-width:760px;margin:0 auto;width:100%;min-width:0}
 .shared{display:block} .shared aside,.shared main{padding:0;max-width:none;width:100%}
-.side-nav{display:none}
-.tab-bar{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:4}
-.tab-bar .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:6px 2px;border:0;background:none;color:var(--ink-3);border-radius:10px;position:relative}
-.tab-bar .nav-item[aria-current="true"]{color:var(--brand)}
-.side-nav .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:10px;border:0;background:none;color:var(--ink-2);font-weight:600;font-size:14px;text-align:left;position:relative}
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--bg);border-bottom:1px solid var(--line);font-family:var(--font-display)}
+.topbar .logo{width:28px;height:28px;border-radius:8px} .topbar .logo .ic{width:15px;height:15px}
+.side-nav{position:fixed;z-index:9;top:0;left:0;bottom:0;width:272px;max-width:85vw;background:var(--surface);border-right:1px solid var(--line);padding:calc(20px + env(safe-area-inset-top,0px)) 14px 20px;display:flex;flex-direction:column;gap:2px;overflow:auto;transform:translateX(-100%);transition:transform .22s var(--ease);box-shadow:var(--sh-2)}
+body.nav-open .side-nav{transform:none}
+.nav-backdrop{position:fixed;inset:0;z-index:8;background:rgba(10,14,24,.45);opacity:0;pointer-events:none;transition:opacity .22s} body.nav-open .nav-backdrop{opacity:1;pointer-events:auto}
+.side-nav .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;border:0;background:none;color:var(--ink-2);font-weight:600;font-size:15px;text-align:left;position:relative;min-height:42px}
 .side-nav .nav-item:hover{background:var(--surface-2);color:var(--ink)} .side-nav .nav-item[aria-current="true"]{background:var(--brand-soft);color:var(--brand-deep)}
-.nav-item .ic{width:19px;height:19px}
-.nbadge{position:absolute;top:4px;right:10px;min-width:16px;height:16px;border-radius:999px;background:var(--down);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
-.side-nav .nbadge{position:static;margin-left:auto}
-.nav-brand{display:flex;gap:10px;align-items:center;padding:4px 8px 16px;font-family:var(--font-display)}
-@media (max-width:899px){ #shell[data-view="group"] .shared aside{display:none} #shell[data-view="home"] .shared main{display:none} #shell[data-view="signin"] .tab-bar{display:none} }
+.nav-item .ic{width:19px;height:19px;flex-shrink:0}
+.nbadge{min-width:16px;height:16px;border-radius:999px;background:var(--down);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px;margin-left:auto}
+.nav-brand{display:flex;gap:10px;align-items:center;padding:4px 8px 16px;font-family:var(--font-display)} .nav-brand-text{flex:1;min-width:0} .nav-collapse{display:none}
+.tab-bar{display:none}
+@media (max-width:899px){ #shell[data-view="group"] .shared aside{display:none} #shell[data-view="home"] .shared main{display:none} #shell[data-view="signin"] .topbar{display:none} }
 @media (min-width:900px){
-  #shell{grid-template-columns:232px 1fr;max-width:1280px;margin:0 auto}
+  #shell{grid-template-columns:240px 1fr;max-width:1320px;margin:0 auto;transition:grid-template-columns .22s var(--ease)}
+  #shell.nav-collapsed{grid-template-columns:76px 1fr}
+  .topbar{display:none} .nav-backdrop{display:none}
+  .side-nav{position:sticky;top:0;height:100vh;height:100dvh;transform:none;box-shadow:none;width:auto;max-width:none;padding:20px 14px}
+  .nav-collapse{display:grid;width:30px;height:30px;flex-shrink:0} .nav-collapse .ic{width:15px;height:15px}
+  #shell.nav-collapsed .side-nav{padding:20px 12px;align-items:center} #shell.nav-collapsed .nav-brand{flex-direction:column;gap:8px;padding:0 0 14px} #shell.nav-collapsed .nav-brand-text{display:none}
+  #shell.nav-collapsed .nav-item{justify-content:center;padding:11px;width:48px} #shell.nav-collapsed .nav-item span{display:none} #shell.nav-collapsed .nbadge{position:absolute;top:4px;right:4px;margin:0}
   #content{padding:24px 32px 60px;max-width:none}
-  .side-nav{display:flex;flex-direction:column;gap:2px;padding:20px 14px;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;height:100dvh;overflow:auto}
   #shell[data-view="signin"] .side-nav{display:none} #shell[data-view="signin"]{grid-template-columns:1fr}
-  .tab-bar{display:none}
   .shared{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:start} .shared aside{position:sticky;top:24px}
   .fab{display:none!important} .desk-only{display:inline-flex!important} [data-back]{display:none!important} .mob-only{display:none!important}
 }
@@ -300,7 +305,7 @@ dialog[open]{animation:dlg .22s var(--ease)} dialog[open]::backdrop{animation:fa
 .typing{display:flex;gap:4px;padding:12px 14px} .typing i{width:7px;height:7px;border-radius:50%;background:var(--ink-3);animation:blink 1.2s infinite} .typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
 /* Dost floating assistant */
-.dost-fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:6;display:flex;align-items:center;gap:8px;padding:12px 16px 12px 14px;border:0;border-radius:999px;background:var(--navy);color:var(--on-navy);font-weight:700;font-size:14px;box-shadow:0 14px 30px -10px rgba(23,32,51,.6);cursor:pointer}
+.dost-fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:6;display:flex;align-items:center;gap:8px;padding:12px 16px 12px 14px;border:0;border-radius:999px;background:var(--navy);color:var(--on-navy);font-weight:700;font-size:14px;box-shadow:0 14px 30px -10px rgba(23,32,51,.6);cursor:pointer}
 .dost-fab .ic{width:20px;height:20px;color:#5FE3B8}
 @media (min-width:900px){.dost-fab{bottom:24px}}
 .dost-panel{position:fixed;z-index:7;background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-2);display:flex;flex-direction:column;overflow:hidden;left:0;right:0;bottom:0;top:max(12px,env(safe-area-inset-top,0px));border-radius:var(--r-lg) var(--r-lg) 0 0}
@@ -311,6 +316,8 @@ dialog[open]{animation:dlg .22s var(--ease)} dialog[open]::backdrop{animation:fa
 .chat-in .mic{border-radius:999px;width:46px;padding:0;color:var(--ink-2)} .chat-in .mic.on{background:var(--down-soft);color:var(--down);border-color:var(--down);animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,64,58,.35)}50%{box-shadow:0 0 0 8px rgba(217,64,58,0)}}
 body.dost-open .fab{display:none!important}
+@media (max-width:899px){.fab{bottom:calc(20px + env(safe-area-inset-bottom,0px));right:auto;left:18px} body.dost-open .dost-fab{display:none}}
+.toast{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
@@ -433,6 +440,7 @@ const PATHS = {
   circle:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', card:'M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM1 10h22', phone:'M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM12 18h.01',
   Education:'M22 10 12 5 2 10l10 5 10-5zM6 12v5c3 3 9 3 12 0v-5', Wallet:'M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 3H8M16 13h.01',
 };
+PATHS.menu = 'M3 6h18M3 12h18M3 18h18'; PATHS.collapse = 'M11 17l-5-5 5-5M18 17l-5-5 5-5'; PATHS.expand = 'M13 17l5-5-5-5M6 17l5-5-5-5';
 PATHS.send = 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z';
 PATHS.mic = 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8';
 PATHS.live = 'M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4';
@@ -966,15 +974,18 @@ function go(r) { route = allowedRoutes().some(x => x[0] === r) ? r : (hasFull(st
 const allowedRoutes = () => hasFull(state.role) ? ROUTES : ROUTES.filter(r => r[0] === 'shared');
 const BACKEND_WANT = 3;
 const backendBanner = () => (mode() !== 'local' && (state.version || 0) < BACKEND_WANT) ? `<div class="banner" style="background:var(--down-soft)">${ic('alert')} <b>Your Google Sheet script is out of date</b> (it has no roles or personal records yet). Paste the latest <b>Code.gs</b> into Apps Script, then Deploy → Manage deployments → ✎ → Version: <b>New version</b> → Deploy. The URL stays the same.</div>` : '';
+let navCollapsed = lsGet('hisaab:nav') === 'collapsed';
 function renderNav() {
-  if (!hasFull(state.role)) return `<nav class="side-nav"><div class="nav-brand"><span class="logo">${ic('wallet')}</span><div><b>Hisaab</b><div class="xs muted">${esc(auth.name)}</div></div></div><button class="nav-item" data-route="shared" aria-current="true">${ic('split')}<span>Shared</span></button><button class="nav-item" data-settings>${ic('user')}<span>Profile</span></button></nav>`;
+  const full = hasFull(state.role);
   const reqs = state.expenses.filter(e => isOwner(e) && e.addedBy).reduce((n, e) => n + openCmts(e.id).length, 0);
-  const due = dueItems(7).length;
+  const due = full ? dueItems(7).length : 0;
   const badge = r => r === 'shared' && reqs ? `<span class="nbadge">${reqs}</span>` : r === 'overview' && due ? `<span class="nbadge">${due}</span>` : '';
-  const item = ([r, label, icon]) => `<button class="nav-item" data-route="${r}" aria-current="${route === r}">${ic(icon)}<span>${label}</span>${badge(r)}</button>`;
-  const side = `<div class="nav-brand"><span class="logo">${ic('wallet')}</span><div><b>Hisaab</b><div class="xs muted">${esc(auth.name)}</div></div></div>${ROUTES.map(item).join('')}`;
-  const tabs = ROUTES.filter(r => MOBILE_TABS.includes(r[0])).map(item).join('') + `<button class="nav-item" data-more aria-current="${!MOBILE_TABS.includes(route)}">${ic('grid')}<span>More</span>${reqs ? `<span class="nbadge">${reqs}</span>` : ''}</button>`;
-  return `<nav class="side-nav">${side}</nav><nav class="tab-bar">${tabs}</nav>`;
+  const item = ([r, label, icon]) => `<button class="nav-item" data-route="${r}" aria-current="${route === r}" title="${label}">${ic(icon)}<span>${label}</span>${badge(r)}</button>`;
+  const items = full ? ROUTES.map(item).join('') : `<button class="nav-item" data-route="shared" aria-current="true" title="Shared">${ic('split')}<span>Shared</span>${reqs ? `<span class="nbadge">${reqs}</span>` : ''}</button><button class="nav-item" data-settings title="Profile">${ic('user')}<span>Profile</span></button>`;
+  shell.classList.toggle('nav-collapsed', navCollapsed);
+  return `<div class="topbar"><button class="ibtn" data-nav-toggle aria-label="Menu">${ic('menu')}</button><span class="logo">${ic('wallet')}</span><b>Hisaab</b><span class="grow"></span>${refreshBtn()}</div>
+    <div class="nav-backdrop" data-nav-close></div>
+    <nav class="side-nav"><div class="nav-brand"><span class="logo">${ic('wallet')}</span><div class="nav-brand-text"><b>Hisaab</b><div class="xs muted">${esc(auth.name)}</div></div><button class="ibtn nav-collapse" data-nav-toggle aria-label="Collapse menu" title="Collapse">${ic(navCollapsed ? 'expand' : 'collapse')}</button></div>${items}</nav>`;
 }
 function renderMore() {
   return `<dialog id="dlgMore" class="confirm"><div class="sheet"><h2>More</h2><div class="more-grid">${ROUTES.filter(r => !MOBILE_TABS.includes(r[0])).map(([r,l,i]) => `<button class="more-item" data-route="${r}">${ic(i)}<span>${l}</span></button>`).join('')}</div><div class="actions"><button class="btn" data-close>Close</button></div></div></dialog>`;
@@ -1173,7 +1184,7 @@ document.addEventListener('click', async ev => {
   else if (d.tab) { tab = d.tab; if (tab === 'members') lookupUsers(''); render(); }
   else if (d.filter) { filter = d.filter; render(); }
   else if ('refresh' in d) refresh(true);
-  else if ('settings' in d) openSettings();
+  else if ('settings' in d) { document.body.classList.remove('nav-open'); openSettings(); }
   else if ('join' in d) act(`You joined ${g.name}`, () => API.updateGroup({group:{...g, members:[...g.members, auth.name]}}), t);
   else if (d.viewExpense) openView(d.viewExpense);
   else if (d.cmtResolve) { const ok = await act(d.cmtState === 'done' ? 'Reopened' : 'Resolved', () => API.resolveComment({id:d.cmtResolve, resolved: d.cmtState !== 'done'}), t); if (ok && $('#dlgView').open) refreshView(); }
@@ -1685,10 +1696,12 @@ document.addEventListener('change', async ev => {
 
 /* ============ Events for personal routes ============ */
 document.addEventListener('click', async ev => {
-  const t = ev.target.closest('[data-route],[data-more],[data-month],[data-year],[data-isub],[data-scen],[data-add-tx],[data-edit-tx],[data-acct],[data-reconcile],[data-ben],[data-resp],[data-resp-history],[data-goal],[data-goal-new],[data-inv],[data-debt],[data-rec],[data-budget],[data-plan-item],[data-plan-income],[data-plan-copy],[data-cat],[data-due-action],[data-toggle],[data-export],[data-tf-clear],[data-users]');
+  const t = ev.target.closest('[data-route],[data-more],[data-nav-toggle],[data-nav-close],[data-month],[data-year],[data-isub],[data-scen],[data-add-tx],[data-edit-tx],[data-acct],[data-reconcile],[data-ben],[data-resp],[data-resp-history],[data-goal],[data-goal-new],[data-inv],[data-debt],[data-rec],[data-budget],[data-plan-item],[data-plan-income],[data-plan-copy],[data-cat],[data-due-action],[data-toggle],[data-export],[data-tf-clear],[data-users]');
   if (!t) return; const d = t.dataset;
-  if (d.route !== undefined) { ev.preventDefault(); $('#dlgMore')?.close(); if (d.sub) insightsSub = d.sub; go(d.route); }
+  if (d.route !== undefined) { ev.preventDefault(); $('#dlgMore')?.close(); document.body.classList.remove('nav-open'); if (d.sub) insightsSub = d.sub; go(d.route); }
   else if ('more' in d) { $('#dlgMore').showModal(); }
+  else if ('navToggle' in d) { if (window.innerWidth < 900) { document.body.classList.toggle('nav-open'); } else { navCollapsed = !navCollapsed; lsSet('hisaab:nav', navCollapsed ? 'collapsed' : 'open'); render(); } }
+  else if ('navClose' in d) document.body.classList.remove('nav-open');
   else if (d.month) { viewMonth = fin.ym(fin.addMonths(viewMonth + '-01', Number(d.month))); render(); }
   else if (d.year) { viewMonth = (Number(viewMonth.slice(0,4)) + Number(d.year)) + viewMonth.slice(4); render(); }
   else if (d.isub) { insightsSub = d.isub; render(); }
