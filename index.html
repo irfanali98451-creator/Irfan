@@ -66,8 +66,10 @@ h1,h2,h3,.top h1,.section-h h3,.hero .big,.totals .val,.glist .name,.month b,.sh
 #shell{display:grid;grid-template-columns:1fr;min-height:100vh;min-height:100dvh}
 #content{padding:16px 16px 100px;max-width:760px;margin:0 auto;width:100%;min-width:0}
 .shared{display:block} .shared aside,.shared main{padding:0;max-width:none;width:100%}
-.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--bg);border-bottom:1px solid var(--line);font-family:var(--font-display)}
-.topbar .logo{width:28px;height:28px;border-radius:8px} .topbar .logo .ic{width:15px;height:15px}
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);font-family:var(--font-display)}
+.topbar .ibtn{width:40px;height:40px;background:transparent;border:0} .topbar .ibtn .ic{width:22px;height:22px;color:var(--ink)}
+.topbar-title{flex:1;min-width:0;font-weight:700;font-size:17px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-brand .logo{width:34px;height:34px;border-radius:10px} .topbar-brand .logo .ic{width:18px;height:18px}
 .side-nav{position:fixed;z-index:9;top:0;left:0;bottom:0;width:272px;max-width:85vw;background:var(--surface);border-right:1px solid var(--line);padding:calc(20px + env(safe-area-inset-top,0px)) 14px 20px;display:flex;flex-direction:column;gap:2px;overflow:auto;transform:translateX(-100%);transition:transform .22s var(--ease);box-shadow:var(--sh-2)}
 body.nav-open .side-nav{transform:none}
 .nav-backdrop{position:fixed;inset:0;z-index:8;background:rgba(10,14,24,.45);opacity:0;pointer-events:none;transition:opacity .22s} body.nav-open .nav-backdrop{opacity:1;pointer-events:auto}
@@ -77,7 +79,26 @@ body.nav-open .side-nav{transform:none}
 .nbadge{min-width:16px;height:16px;border-radius:999px;background:var(--down);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px;margin-left:auto}
 .nav-brand{display:flex;gap:10px;align-items:center;padding:4px 8px 16px;font-family:var(--font-display)} .nav-brand-text{flex:1;min-width:0} .nav-collapse{display:none}
 .tab-bar{display:none}
-@media (max-width:899px){ #shell[data-view="group"] .shared aside{display:none} #shell[data-view="home"] .shared main{display:none} #shell[data-view="signin"] .topbar{display:none} }
+@media (max-width:899px){
+  #shell[data-view="group"] .shared aside{display:none} #shell[data-view="home"] .shared main{display:none} #shell[data-view="signin"] .topbar{display:none}
+  :root{--fs-xs:11.5px;--fs-sm:12.5px;--fs-md:14.5px;--fs-lg:16px;--fs-xl:19px;--fs-3xl:32px;--r-lg:18px;--r-md:13px}
+  body{font-size:var(--fs-md)}
+  #content{padding:12px 14px 96px}
+  .page-head{padding:2px 0 12px} .page-head h1{display:none} .page-head .ibtn[data-refresh]{display:none} .page-head .sm{font-size:12.5px}
+  .top h1{display:none} .top .ibtn[data-refresh]{display:none} .top{padding:2px 0 12px}
+  .hero{padding:18px 18px 14px;border-radius:var(--r-lg)} .hero .big{font-size:var(--fs-3xl)} .hero .stats{gap:6px 10px;margin-top:14px;padding-top:12px} .hero .stats .v{font-size:14px} .hero .tools{gap:6px;margin-top:12px} .hero .btn{padding:6px 12px;font-size:12.5px;min-height:32px}
+  .section{margin-top:18px} .section-h{padding:0 2px 8px} .section-h h3{font-size:16px}
+  .btn{padding:8px 12px;font-size:13px;min-height:36px} .btn.sm{padding:5px 10px;font-size:12.5px;min-height:30px} .ibtn{width:36px;height:36px}
+  .exp{padding:10px 12px;gap:10px;grid-template-columns:40px 1fr auto} .exp .ic-tile{width:40px!important;height:40px!important} .exp .desc{font-size:14.5px} .exp .sub{font-size:12px} .exp .right .amt{font-size:14.5px}
+  .line-list .ln{padding:10px 12px;gap:10px} .ln .t .n{font-size:14.5px} .ln .t .d{font-size:12px}
+  .month{padding:14px 4px 6px} .month b{font-size:14px} .month span{font-size:12px}
+  .filters .chip{padding:6px 11px;font-size:12.5px;min-height:32px} .search input{padding:9px 12px 9px 36px;font-size:14.5px}
+  .empty{padding:28px 18px;font-size:14px} .empty b{font-size:16px}
+  .totals .val{font-size:19px} .glist .item{padding:12px 14px}
+  .card{border-radius:var(--r-lg)}
+  .sheet{padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))} .sheet h2{font-size:19px} .field{margin-bottom:12px} .amount input{font-size:26px}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
 @media (min-width:900px){
   #shell{grid-template-columns:240px 1fr;max-width:1320px;margin:0 auto;transition:grid-template-columns .22s var(--ease)}
   #shell.nav-collapsed{grid-template-columns:76px 1fr}
@@ -986,7 +1007,8 @@ function renderNav() {
   const item = ([r, label, icon]) => `<button class="nav-item" data-route="${r}" aria-current="${route === r}" title="${label}">${ic(icon)}<span>${label}</span>${badge(r)}</button>`;
   const items = full ? ROUTES.map(item).join('') : `<button class="nav-item" data-route="shared" aria-current="true" title="Shared">${ic('split')}<span>Shared</span>${reqs ? `<span class="nbadge">${reqs}</span>` : ''}</button><button class="nav-item" data-settings title="Profile">${ic('user')}<span>Profile</span></button>`;
   shell.classList.toggle('nav-collapsed', navCollapsed);
-  return `<div class="topbar"><button class="ibtn" data-nav-toggle aria-label="Menu">${ic('menu')}</button><span class="logo">${ic('wallet')}</span><b>Hisaab</b><span class="grow"></span>${refreshBtn()}</div>
+  const title = route === 'shared' ? (cur() ? cur().name : 'Shared') : ((ROUTES.find(r => r[0] === route) || ['', 'Hisaab'])[1]);
+  return `<div class="topbar"><button class="ibtn" data-nav-toggle aria-label="Menu">${ic('menu')}</button><span class="topbar-title">${esc(title)}</span><span class="topbar-brand" title="Hisaab"><span class="logo">${ic('wallet')}</span></span></div>
     <div class="nav-backdrop" data-nav-close></div>
     <nav class="side-nav"><div class="nav-brand"><span class="logo">${ic('wallet')}</span><div class="nav-brand-text"><b>Hisaab</b><div class="xs muted">${esc(auth.name)}</div></div><button class="ibtn nav-collapse" data-nav-toggle aria-label="Collapse menu" title="Collapse">${ic(navCollapsed ? 'expand' : 'collapse')}</button></div>${items}</nav>`;
 }
