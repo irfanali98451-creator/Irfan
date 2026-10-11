@@ -1,6 +1,6 @@
 // Hisaab service worker: caches the app shell so it opens instantly and offline.
 // Bump CACHE when you change index.html so phones pick up the new version.
-const CACHE = 'hisaab-v13';
+const CACHE = 'hisaab-v14';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './config.js', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
