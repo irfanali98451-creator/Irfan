@@ -284,6 +284,21 @@ dialog[open]{animation:dlg .22s var(--ease)} dialog[open]::backdrop{animation:fa
 .banner a{color:var(--brand-deep);font-weight:600}
 .ln .n .badge{margin-left:4px}
 .ln .t .n .pill{margin-left:4px}
+
+/* ============ Dost (AI companion) ============ */
+.chat{display:flex;flex-direction:column;height:calc(100dvh - 190px);min-height:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-1);overflow:hidden}
+@media (max-width:899px){.chat{height:calc(100dvh - 230px)}}
+.chat-log{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.msg{display:flex;gap:10px;align-items:flex-end;max-width:85%} .msg.me{align-self:flex-end;flex-direction:row-reverse} .msg.sys{align-self:stretch;max-width:100%;justify-content:center}
+.bubble{padding:10px 14px;border-radius:16px;font-size:15px;line-height:1.5;background:var(--surface-2);color:var(--ink);border-bottom-left-radius:6px}
+.msg.me .bubble{background:var(--navy);color:var(--on-navy);border-bottom-left-radius:16px;border-bottom-right-radius:6px}
+.receipt{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--up-soft);color:var(--up);text-align:left}
+.receipt.bad{background:var(--down-soft);color:var(--down)} .receipt .ic{width:14px;height:14px;flex-shrink:0}
+.confirm-card{padding:12px 14px;width:100%;max-width:520px;border-color:var(--brand)}
+.suggest{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px 40px} .suggest .chip{font-weight:500;background:var(--surface);font-size:13px;white-space:normal;text-align:left;min-height:34px;line-height:1.3} @media (max-width:480px){.suggest{margin-left:0}}
+.chat-in{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--surface)} .chat-in input{flex:1;min-width:0;border:1.5px solid var(--line-2);border-radius:999px;padding:11px 16px;background:var(--surface);font-size:16px} .chat-in input:focus{border-color:var(--brand);outline:0} .chat-in .btn{border-radius:999px;width:46px;padding:0} .chat-in .ic{width:18px;height:18px}
+.typing{display:flex;gap:4px;padding:12px 14px} .typing i{width:7px;height:7px;border-radius:50%;background:var(--ink-3);animation:blink 1.2s infinite} .typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
 </style>
 </head>
 <body>
@@ -397,6 +412,7 @@ const PATHS = {
   circle:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', card:'M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM1 10h22', phone:'M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM12 18h.01',
   Education:'M22 10 12 5 2 10l10 5 10-5zM6 12v5c3 3 9 3 12 0v-5', Wallet:'M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 3H8M16 13h.01',
 };
+PATHS.send = 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z';
 PATHS.Family = PATHS.users;
 const ic = (n, cls='ic') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${PATHS[n] || PATHS.Other}"/></svg>`;
 const CATS = ['Food','Travel','Rent','Groceries','Bills','Fun','Gifts','Health','Trip','Other'];
@@ -719,6 +735,8 @@ const local = (() => {
   const fail = m => { throw new Error(m); };
   return {
     login: async ({name, pin}) => { const k = Object.keys(st.users).find(u => sameName(u, name)); const u = k && (typeof st.users[k] === 'string' ? {pin: st.users[k], role:'shared'} : st.users[k]); if (k) { if (u.pin !== pin) fail('Wrong PIN for ' + k); st.users[k] = u; save(); return {name:k, isNew:false, role: roleOf(k, u.role)}; } st.users[name] = {pin, role:'shared', created: Date.now()}; save(); return {name, isNew:true, role: roleOf(name, 'shared')}; },
+    ai: async () => fail('Dost needs your Google Sheet connection: the AI runs on the server so the key stays private.'),
+    aiStatus: async () => ({ok:false}),
     findUsers: async ({q}) => { const ql = String(q||'').toLowerCase(); return {names: Object.keys(st.users).filter(n => !ql || n.toLowerCase().includes(ql)).sort().slice(0,8)}; },
     changePin: async ({newPin}) => { const k = Object.keys(st.users).find(u => sameName(u, auth.name)) || fail('User not found'); st.users[k] = {...(typeof st.users[k] === 'string' ? {pin: st.users[k]} : st.users[k]), pin: newPin}; save(); return {ok:true}; },
     listUsers: async () => { if (myRole() !== 'moderator') fail('Only ' + MODERATOR + ' can manage access'); return {users: Object.entries(st.users).map(([n,u]) => ({name:n, role: roleOf(n, (u||{}).role), created: (u||{}).created || 0}))}; },
@@ -740,7 +758,7 @@ const local = (() => {
 const mode = () => hasGAS ? 'gas' : cfg.url.trim() ? 'remote' : 'local';
 const call = action => (payload = {}) => mode()==='gas' ? gs(action, payload) : mode()==='remote' ? remote(action, payload) : local[action](payload);
 const API = {login: call('login'), getState: call('getState'), createGroup: call('createGroup'), updateGroup: call('updateGroup'), deleteGroup: call('deleteGroup'),
-             addExpense: call('addExpense'), updateExpense: call('updateExpense'), deleteExpense: call('deleteExpense'), addComment: call('addComment'), resolveComment: call('resolveComment'), putDoc: call('putDoc'), putDocs: call('putDocs'), deleteDoc: call('deleteDoc'), listUsers: call('listUsers'), setRole: call('setRole'), changePin: call('changePin'), findUsers: call('findUsers')};
+             addExpense: call('addExpense'), updateExpense: call('updateExpense'), deleteExpense: call('deleteExpense'), addComment: call('addComment'), resolveComment: call('resolveComment'), putDoc: call('putDoc'), putDocs: call('putDocs'), deleteDoc: call('deleteDoc'), listUsers: call('listUsers'), setRole: call('setRole'), changePin: call('changePin'), findUsers: call('findUsers'), ai: p => window.__aiMock ? window.__aiMock(p) : call('ai')(p), aiStatus: p => window.__aiMock ? Promise.resolve({ok:true}) : call('aiStatus')(p)};
 
 /* ============ State ============ */
 let state = {groups:[], expenses:[], comments:[], docs:[]}, currentId = null, tab = 'expenses', filter = 'all', query = '', loaded = false, syncing = false;
@@ -779,7 +797,9 @@ function render() {
   navEl.innerHTML = renderNav(); if (!$('#dlgMore')) $('#moreHost').innerHTML = renderMore(); else $('#moreHost').innerHTML = renderMore();
   if (route === 'shared') { const g = cur(); if (currentId && !g) currentId = null; shell.dataset.view = g ? 'group' : 'home'; content.innerHTML = `<div class="shared"><aside>${renderSide()}</aside><main>${g ? renderGroup(g) : renderWelcome()}</main></div>`; return; }
   shell.dataset.view = 'page';
-  content.innerHTML = ({overview: renderOverview, transactions: renderTransactions, plan: renderPlan, family: renderFamily, wealth: renderWealth, debts: renderDebts, insights: renderInsights, settings: renderSettings}[route] || renderOverview)();
+  if (route === 'ai' && ai.loadedFor !== auth.name) { aiLoad(); ai.loadedFor = auth.name; if (aiAllowed() && ai.status == null) API.aiStatus().then(r => { ai.status = !!r.ok; renderAi(); }).catch(() => { ai.status = false; renderAi(); }); }
+  content.innerHTML = ({overview: renderOverview, ai: renderAiPage, transactions: renderTransactions, plan: renderPlan, family: renderFamily, wealth: renderWealth, debts: renderDebts, insights: renderInsights, settings: renderSettings}[route] || renderOverview)();
+  if (route === 'ai') renderAi();
 }
 const refreshBtn = () => `<button class="ibtn ${syncing ? 'spin' : ''}" data-refresh aria-label="Refresh" title="Refresh">${ic('refresh')}</button>`;
 const gearBtn = () => `<button class="ibtn" data-settings aria-label="Connection settings" title="Connection">${ic('settings')}</button>`;
@@ -914,8 +934,8 @@ const RELATIONS = ['Brother','Sister','Mother','Father','Spouse','Child','Relati
 const RESP_CATS = [['tuition','Tuition / semester fee'],['tuition','Admission fee'],['tuition','Exam fee'],['education','Books & supplies'],['transport','Transport'],['family_support','Household contribution'],['groceries','Family groceries'],['family_medical','Medical'],['family_support','Other support']];
 
 /* ============ Routing ============ */
-const ROUTES = [['overview','Overview','home'],['transactions','Transactions','list'],['plan','Plan','target'],['family','Family','users'],['wealth','Wealth','trend'],['debts','Debts','arrows'],['shared','Shared','split'],['insights','Insights','bulb'],['settings','Settings','settings']];
-const MOBILE_TABS = ['overview','transactions','plan','family'];
+const ROUTES = [['overview','Overview','home'],['ai','Dost','bulb'],['transactions','Transactions','list'],['plan','Plan','target'],['family','Family','users'],['wealth','Wealth','trend'],['debts','Debts','arrows'],['shared','Shared','split'],['insights','Insights','bulb'],['settings','Settings','settings']];
+const MOBILE_TABS = ['overview','ai','transactions','family'];
 let route = lsGet('hisaab:route') || 'overview', viewMonth = fin.ym(today()), txFilter = {q:'', type:'all', account:'all', cat:'all', from:'', to:''};
 function go(r) { route = allowedRoutes().some(x => x[0] === r) ? r : (hasFull(state.role) ? 'overview' : 'shared'); lsSet('hisaab:route', route); if (route !== 'shared') currentId = null; render(); scrollTo(0,0); }
 const allowedRoutes = () => hasFull(state.role) ? ROUTES : ROUTES.filter(r => r[0] === 'shared');
@@ -957,7 +977,7 @@ function renderOverview() {
   const setup = noAcc ? `<div class="banner">${ic('bulb')} Start by adding an account (cash or bank) with its current balance in <a href="#" data-route="settings">Settings</a>, then record your salary and expenses. Safe-to-spend needs real balances.</div>` : '';
   return pageHead('Overview', `<button class="btn primary" data-add-tx>${ic('plus')} Add</button>`, new Date(t + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', day:'numeric', month:'long'})) + backendBanner() + setup + `
   <section class="hero"><p class="lede">Safe to spend · next ${sts.horizon} days</p><p class="big num ${sts.safe < 0 ? 'neg' : ''}">${money(sts.safe)}</p><p class="sub">${money(sts.liquid)} liquid − ${money(sts.totalDeductions)} reserved for commitments, savings and your cash reserve</p>
-    <div class="tools"><button class="btn" data-route="plan">${ic('target')} See the breakdown</button><button class="btn" data-add-tx>${ic('plus')} Add transaction</button></div>
+    <div class="tools"><button class="btn" data-route="plan">${ic('target')} See the breakdown</button><button class="btn" data-add-tx>${ic('plus')} Add transaction</button><button class="btn" data-route="ai">${ic('bulb')} Ask Dost</button></div>
     <div class="stats"><div><div class="k">Income this month</div><div class="v num">${money(m.income)}</div></div><div><div class="k">Spent</div><div class="v num">${money(m.consumption)}</div></div><div><div class="k">Family</div><div class="v num">${money(m.family)}</div></div><div><div class="k">Saved + invested</div><div class="v num">${money(m.savings + m.investments)}</div></div><div><div class="k">Net worth</div><div class="v num">${money(nw.net)}</div></div></div></section>
   <div class="grid2col">
     <div class="section"><div class="section-h"><h3>Due soon</h3><a href="#" class="sm" data-route="insights" data-sub="calendar">Calendar</a></div>${due.length ? `<div class="card line-list">${due.map(d => `<div class="ln">${tile(...kindTile(d.kind))}<span class="t"><span class="n">${esc(d.label)}</span><span class="d ${d.overdue?'neg':''}">${d.overdue ? 'Overdue · ' : ''}${niceDate(d.date)}</span></span><span class="rt"><span class="amt num">${money(d.amount)}</span><button class="btn sm" data-due-action="${d.action}" data-id="${d.id}">${d.kind==='income'?'Received':d.kind==='goal'?'Add savings':'Pay'}</button></span></div>`).join('')}</div>` : emptyCard('Nothing due in the next 14 days', 'Family fees, bills and loan dates you add will show up here.')}</div>
@@ -1681,6 +1701,214 @@ document.addEventListener('submit', async ev => {
   await saveDoc({kind:'settings', id: s.id || uid(), currency: $('#stCur').value, reserve: fin.r2(Number($('#stReserve').value)||0), horizonDays: Math.min(90, Math.max(7, Number($('#stHorizon').value)||30)), efMonths: Math.min(12, Math.max(1, Number($('#stEf').value)||3)), created: s.created || Date.now()}, 'Settings saved', ev.submitter);
 });
 document.addEventListener('click', ev => { if (ev.target.closest('#signOutBtn2')) { clearAuth(); currentId = null; refresh(); } });
+
+/* ============ Dost: AI financial companion ============
+   The model only proposes tool calls. Every call is executed here through the same
+   validated write paths as the forms (API.putDoc etc.), so backend ownership/role checks apply.
+   Updates, deletes and budget changes wait for a tap on a Confirm card. Each call has an id so
+   a retried turn can never execute twice.                                                      */
+const AI_CONFIRM = new Set(['update_transaction', 'delete_transaction', 'set_budget']);
+const aiKey = () => 'hisaab:ai:' + (auth.name || '').toLowerCase();
+let ai = {contents: [], log: [], busy: false, error: '', status: null, executed: new Set(), pending: null};
+function aiLoad() { try { const d = JSON.parse(lsGet(aiKey()) || '{}'); ai.contents = d.contents || []; ai.log = d.log || []; ai.executed = new Set(d.executed || []); } catch { ai.contents = []; ai.log = []; } }
+function aiSave() { lsSet(aiKey(), JSON.stringify({contents: ai.contents.slice(-40), log: ai.log.slice(-80), executed: [...ai.executed].slice(-200)})); }
+const aiAllowed = () => hasFull(state.role) && (mode() !== 'local' || !!window.__aiMock);
+
+/** Compact, deterministic view of the user's own data for the model (computed by the engine). */
+function aiSnapshot() {
+  const c = ctx(), t = today(), ym = fin.ym(t), prevYm = fin.ym(fin.addMonths(ym + '-01', -1));
+  const bal = fin.balances(c.accounts, c.txns, c.debts), m = fin.month(c.txns, c.sharedShares, ym, c.cats), pm = fin.month(c.txns, c.sharedShares, prevYm, c.cats);
+  const sts = fin.safeToSpend(c), nw = fin.netWorth(c.accounts, c.txns, c.debts, c.investments);
+  const def = c.accounts.find(a => a.type !== 'credit' && a.type !== 'investment');
+  return {
+    today: t, currency: curr(), user: auth.name,
+    accounts: c.accounts.map(a => ({name: a.name, type: a.type, balance: bal[a.id] || 0, default: def && a.id === def.id})),
+    categories: c.cats.map(x => x.name),
+    family: docs('beneficiary').map(b => ({name: b.name, relation: b.relation, responsibilities: c.responsibilities.filter(r => r.beneficiaryId === b.id && r.active !== false).map(r => { const st = fin.responsibilityState(r, c.txns, t); return {title: r.title, amount: r.amount, schedule: r.schedule, nextDue: r.nextDue, paidThisCycle: st.paid, outstanding: st.outstanding}; })})),
+    goals: c.goals.map(g => { const st = fin.goalState(g, c.txns, t); return {name: g.name, target: g.target, saved: st.allocated, targetDate: g.targetDate || null, suggestedMonthly: st.suggested}; }),
+    loans: c.debts.map(d => { const st = fin.debtState(d, c.txns); return {person: d.person, direction: d.direction, outstanding: st.outstanding, dueDate: d.dueDate || null}; }).filter(x => x.outstanding > 0),
+    budgets: c.budgets.map(b => { const st = fin.budgetState(b, c.txns, c.sharedShares, ym); return {category: catOf(b.categoryId).name, limit: b.amount, spent: st.spent, remaining: st.remaining}; }),
+    thisMonth: {income: m.income, spent: m.consumption, family: m.family, saved: m.savings, invested: m.investments, byCategory: Object.fromEntries(Object.entries(m.byCat).map(([k,v]) => [catOf(k).name, v]))},
+    lastMonth: {income: pm.income, spent: pm.consumption, family: pm.family, saved: pm.savings},
+    safeToSpend: {amount: sts.safe, liquid: sts.liquid, reserved: sts.totalDeductions, horizonDays: sts.horizon, note: 'estimate; expected income not included'},
+    netWorth: nw.net, dueNext30Days: dueItems(30).slice(0, 10).map(d => ({date: d.date, label: d.label, amount: d.amount})),
+    recentTransactions: c.txns.slice(0, 15).map(x => ({id: x.id, date: x.date, type: x.type, amount: x.amount, category: x.categoryId ? catOf(x.categoryId).name : '', merchant: x.merchant || x.note || ''})),
+    sharedGroups: state.groups.map(g => { const me = meOf(g); const b = me ? (calc.balances(g.members, gExp(g.id))[me] || 0) : 0; return {name: g.name, myBalance: b}; }),
+  };
+}
+
+/* ---- name resolution (fuzzy but never silent on real ambiguity) ---- */
+const norm = s => String(s || '').toLowerCase().trim();
+function pick(list, q, getName, what) {
+  if (!q) return null; const nq = norm(q);
+  const exact = list.filter(x => norm(getName(x)) === nq); if (exact.length === 1) return exact[0];
+  const part = list.filter(x => norm(getName(x)).includes(nq) || nq.includes(norm(getName(x)))); if (part.length === 1) return part[0];
+  if (part.length > 1) throw new Error(`Which ${what} do you mean: ${part.map(getName).join(', ')}?`);
+  throw new Error(`No ${what} called "${q}". Known: ${list.map(getName).slice(0, 12).join(', ') || 'none'}.`);
+}
+const CAT_HINTS = {petrol:'transport', fuel:'transport', careem:'transport', uber:'transport', bus:'transport', chai:'food', tea:'food', lunch:'food', dinner:'food', breakfast:'food', snacks:'food', khana:'food', grocery:'groceries', sabzi:'groceries', ration:'groceries', rent:'rent', kiraya:'rent', bijli:'utilities', electricity:'utilities', gas:'utilities', internet:'utilities', mobile:'utilities', netflix:'subscriptions', doctor:'healthcare', medicine:'healthcare', dawai:'healthcare', clothes:'shopping', shoes:'shopping', gift:'gifts', movie:'entertainment', fees:'tuition', fee:'tuition', tuition:'tuition', salary:'salary', tankhwah:'salary'};
+function resolveCategory(q, type, merchant) {
+  const cats = allCats().filter(c => type === 'income' ? c.group === 'income' : c.group !== 'income');
+  if (q) { try { return pick(cats, q, c => c.name, 'category').id; } catch (e) { const h = CAT_HINTS[norm(q)]; if (h) return h; throw e; } }
+  for (const w of norm(merchant).split(/\W+/)) if (CAT_HINTS[w]) return CAT_HINTS[w];
+  return type === 'income' ? 'salary' : 'other';
+}
+function resolveAccount(q) { const acc = accounts(); if (!acc.length) throw new Error('Add an account first (Settings).'); if (!q) return (acc.find(a => a.type !== 'credit' && a.type !== 'investment') || acc[0]).id; return pick(acc, q, a => a.name, 'account').id; }
+const dateOr = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : today();
+const amt = v => { const n = fin.r2(Number(v)); if (!(n > 0)) throw new Error('Amount must be above zero.'); return n; };
+
+/* ---- tool execution: returns {summary, data} for the model and a receipt for the chat ---- */
+async function aiExecute(call) {
+  const a = call.args || {};
+  switch (call.name) {
+    case 'add_transactions': {
+      const batch = [], receipts = [];
+      for (const it of (a.items || []).slice(0, 10)) {
+        const type = ['expense','income','refund'].includes(it.type) ? it.type : 'expense';
+        const tx = {kind:'transaction', id: uid(), type, amount: amt(it.amount), date: dateOr(it.date), accountId: resolveAccount(it.account), categoryId: resolveCategory(it.category, type, it.merchant), merchant: cleanS(it.merchant, 60), note: cleanS(it.note, 120), created: Date.now()};
+        if (type === 'expense' && it.beneficiary) { const b = pick(docs('beneficiary'), it.beneficiary, x => x.name, 'family member'); tx.beneficiaryId = b.id; if (it.responsibility) tx.responsibilityId = pick(docs('responsibility').filter(r => r.beneficiaryId === b.id), it.responsibility, r => r.title, 'responsibility').id; }
+        batch.push(tx); receipts.push(`${TX_TYPES[type]} ${money(tx.amount)} · ${catOf(tx.categoryId).name}${tx.merchant ? ' · ' + tx.merchant : ''} · ${acctName(tx.accountId)} · ${niceDate(tx.date)}`);
+      }
+      if (!batch.length) throw new Error('No items to add.');
+      await commit(() => API.putDocs({docs: batch}));
+      return {summary: `Saved ${batch.length} transaction${batch.length>1?'s':''}: ${receipts.join('; ')}`, data: {saved: batch.map(t => ({id: t.id, amount: t.amount, category: catOf(t.categoryId).name, date: t.date, account: acctName(t.accountId)}))}};
+    }
+    case 'search_transactions': {
+      const q = norm(a.query), list = txns().filter(t => (!a.type || t.type === a.type) && (!a.category || norm(catOf(t.categoryId).name) === norm(a.category)) && (!a.from || t.date >= a.from) && (!a.to || t.date <= a.to) && (!q || [t.merchant, t.note, catOf(t.categoryId).name, t.person].some(v => norm(v).includes(q)))).slice(0, Math.min(25, Number(a.limit) || 10));
+      return {summary: `${list.length} found`, data: {transactions: list.map(t => ({id: t.id, date: t.date, type: t.type, amount: t.amount, category: t.categoryId ? catOf(t.categoryId).name : '', merchant: t.merchant || t.note || '', account: acctName(t.accountId)}))}, quiet: true};
+    }
+    case 'update_transaction': {
+      const t = doc(a.id); if (!t || t.kind !== 'transaction') throw new Error('Transaction not found.');
+      const u = {...t}; if (a.amount != null) u.amount = amt(a.amount); if (a.date) u.date = dateOr(a.date); if (a.category) u.categoryId = resolveCategory(a.category, t.type); if (a.merchant != null) u.merchant = cleanS(a.merchant, 60); if (a.note != null) u.note = cleanS(a.note, 120); if (a.account) u.accountId = resolveAccount(a.account);
+      await commit(() => API.putDoc({doc: u}));
+      return {summary: `Updated: ${money(u.amount)} · ${catOf(u.categoryId).name} · ${niceDate(u.date)}`, data: {id: u.id, amount: u.amount, category: catOf(u.categoryId).name, date: u.date}};
+    }
+    case 'delete_transaction': { const t = doc(a.id); if (!t || t.kind !== 'transaction') throw new Error('Transaction not found.'); await commit(() => API.deleteDoc({id: t.id})); return {summary: `Deleted ${money(t.amount)} ${t.merchant || catOf(t.categoryId).name}`, data: {deleted: t.id}}; }
+    case 'set_budget': {
+      const cid = resolveCategory(a.category, 'expense'), ex = docs('budget').find(b => b.categoryId === cid);
+      const b = {kind:'budget', id: ex ? ex.id : uid(), categoryId: cid, amount: amt(a.amount), warnAt: ex ? ex.warnAt : 0.8, created: ex ? ex.created : Date.now()};
+      await commit(() => API.putDoc({doc: b})); return {summary: `${catOf(cid).name} budget is now ${money(b.amount)}/month`, data: {category: catOf(cid).name, limit: b.amount}};
+    }
+    case 'add_goal': { const g = {kind:'goal', id: uid(), name: cleanS(a.name, 40) || 'Savings goal', target: amt(a.target), targetDate: /^\d{4}-\d{2}-\d{2}$/.test(a.targetDate || '') ? a.targetDate : '', accountId: '', note: '', created: Date.now()}; await commit(() => API.putDoc({doc: g})); return {summary: `Goal "${g.name}" created: ${money(g.target)}${g.targetDate ? ' by ' + niceDate(g.targetDate) : ''}`, data: {id: g.id}}; }
+    case 'save_to_goal': { const g = pick(docs('goal'), a.goal, x => x.name, 'goal'); const tx = {kind:'transaction', id: uid(), type:'savings', direction:'in', amount: amt(a.amount), date: today(), accountId: resolveAccount(a.account), goalId: g.id, note:'', created: Date.now()}; await commit(() => API.putDoc({doc: tx})); const st = fin.goalState(g, txns(), today()); return {summary: `Saved ${money(tx.amount)} to ${g.name} · now ${money(st.allocated)} of ${money(g.target)} (${st.pct}%)`, data: {goal: g.name, saved: st.allocated, pct: st.pct}}; }
+    case 'record_loan': {
+      const dir = a.direction === 'borrowed' ? 'borrowed' : 'lent', person = cleanS(a.person, 40); if (!person) throw new Error('Who is the loan with?');
+      let d = docs('debt').find(x => x.direction === dir && sameName(x.person, person) && fin.debtState(x, txns()).outstanding > 0); const batch = [];
+      if (!d) { d = {kind:'debt', id: uid(), direction: dir, person, date: today(), dueDate: /^\d{4}-\d{2}-\d{2}$/.test(a.dueDate || '') ? a.dueDate : '', note: cleanS(a.note, 120), created: Date.now()}; batch.push(d); }
+      const tx = {kind:'transaction', id: uid(), type: dir === 'lent' ? 'lend' : 'borrow', amount: amt(a.amount), date: today(), accountId: resolveAccount(a.account), debtId: d.id, person, note: cleanS(a.note, 120), created: Date.now()}; batch.push(tx);
+      await commit(() => API.putDocs({docs: batch})); const st = fin.debtState(d, txns());
+      return {summary: `${dir === 'lent' ? 'Lent to' : 'Borrowed from'} ${person}: ${money(tx.amount)} · outstanding ${money(st.outstanding)}`, data: {person, outstanding: st.outstanding}};
+    }
+    case 'record_repayment': {
+      const open = docs('debt').filter(x => fin.debtState(x, txns()).outstanding > 0); const d = pick(open, a.person, x => x.person, 'open loan'); const st = fin.debtState(d, txns()); const n = amt(a.amount); if (n > st.outstanding + 0.005) throw new Error(`Only ${money(st.outstanding)} is outstanding with ${d.person}.`);
+      const tx = {kind:'transaction', id: uid(), type:'repayment', amount: n, date: today(), accountId: resolveAccount(a.account), debtId: d.id, note:'', created: Date.now()}; await commit(() => API.putDoc({doc: tx})); const after = fin.debtState(d, txns());
+      return {summary: `${d.direction === 'lent' ? d.person + ' repaid' : 'Repaid ' + d.person} ${money(n)} · ${after.outstanding ? money(after.outstanding) + ' still outstanding' : 'settled'}`, data: {person: d.person, outstanding: after.outstanding}};
+    }
+    case 'pay_responsibility': {
+      let resps = docs('responsibility').filter(r => r.active !== false); if (a.beneficiary) { const b = pick(docs('beneficiary'), a.beneficiary, x => x.name, 'family member'); resps = resps.filter(r => r.beneficiaryId === b.id); }
+      const r = pick(resps, a.responsibility, x => x.title + ' ' + ((doc(x.beneficiaryId)||{}).name || ''), 'responsibility'); const st = fin.responsibilityState(r, txns(), today()); const n = a.amount != null ? amt(a.amount) : (st.outstanding || r.amount);
+      const tx = {kind:'transaction', id: uid(), type: r.recoverable ? 'lend' : 'expense', amount: n, date: dateOr(a.date), accountId: resolveAccount(a.account), categoryId: r.categoryId, merchant: r.title, beneficiaryId: r.beneficiaryId, responsibilityId: r.id, note:'', created: Date.now()};
+      if (r.recoverable) { const b = doc(r.beneficiaryId); let d = docs('debt').find(x => x.direction === 'lent' && sameName(x.person, b.name) && fin.debtState(x, txns()).outstanding > 0); const batch = []; if (!d) { d = {kind:'debt', id: uid(), direction:'lent', person: b.name, date: tx.date, note:'Recoverable family support', created: Date.now()}; batch.push(d); } tx.debtId = d.id; tx.person = b.name; batch.push(tx); await commit(() => API.putDocs({docs: batch})); } else await commit(() => API.putDoc({doc: tx}));
+      const after = fin.responsibilityState(r, txns(), today()); let extra = '';
+      if (after.outstanding <= 0.005) { const nxt = r.schedule === 'once' ? {...r, active:false} : {...r, nextDue: fin.addMonths(r.nextDue, after.months)}; await commit(() => API.putDoc({doc: nxt})); extra = r.schedule === 'once' ? ' · complete' : ` · next due ${niceDate(nxt.nextDue)}`; }
+      return {summary: `Paid ${money(n)} toward ${r.title} (${(doc(r.beneficiaryId)||{}).name})${after.outstanding > 0 ? ' · ' + money(after.outstanding) + ' still due' : extra}`, data: {responsibility: r.title, paid: n, outstanding: after.outstanding}};
+    }
+    case 'add_responsibility': {
+      const b = pick(docs('beneficiary'), a.beneficiary, x => x.name, 'family member'); const sched = ['monthly','quarterly','semester','annual','once'].includes(a.schedule) ? a.schedule : 'monthly';
+      const r = {kind:'responsibility', id: uid(), beneficiaryId: b.id, title: cleanS(a.title, 60) || 'Support', categoryId: a.category ? resolveCategory(a.category, 'expense') : 'tuition', catLabel: '', amount: amt(a.amount), schedule: sched, customMonths: null, nextDue: dateOr(a.nextDue), recoverable: false, active: true, notes: '', created: Date.now()};
+      await commit(() => API.putDoc({doc: r})); return {summary: `${r.title} for ${b.name}: ${money(r.amount)} ${sched}, next due ${niceDate(r.nextDue)}`, data: {id: r.id}};
+    }
+    case 'get_review': {
+      const c = ctx(), ym = /^\d{4}-\d{2}$/.test(a.month || '') ? a.month : fin.ym(today()), m = fin.month(c.txns, c.sharedShares, ym, c.cats), sts = fin.safeToSpend(c);
+      return {summary: `Review for ${ym}`, quiet: true, data: {month: ym, income: m.income, spent: m.consumption, family: m.family, commitments: m.commitments, saved: m.savings, invested: m.investments, byCategory: Object.fromEntries(Object.entries(m.byCat).map(([k,v]) => [catOf(k).name, v])), budgets: c.budgets.map(b => { const st = fin.budgetState(b, c.txns, c.sharedShares, ym); return {category: catOf(b.categoryId).name, limit: b.amount, spent: st.spent, pct: st.pct}; }), safeToSpend: {amount: sts.safe, liquid: sts.liquid, deductions: sts.deductions.map(d => ({label: d.label, amount: d.amount})), assumptions: sts.assumptions}, insights: fin.insights(c).map(i => ({title: i.title.replace(/<[^>]+>/g,''), why: i.why.replace(/<[^>]+>/g,''), next: i.next.replace(/<[^>]+>/g,'')}))}};
+    }
+    default: throw new Error('Unknown tool ' + call.name);
+  }
+}
+const cleanS = (v, n) => String(v ?? '').replace(/[\u0000-\u001F]/g, '').trim().slice(0, n);
+async function commit(fn) { const s = await fn(); if (s && s.groups) { state = s; state.comments ||= []; state.docs ||= []; } }
+
+/* ---- conversation loop ---- */
+function aiPush(role, parts) { ai.contents.push({role, parts}); }
+function aiLog(entry) { ai.log.push({...entry, t: Date.now()}); aiSave(); renderAi(); }
+async function aiSend(text) {
+  text = String(text || '').trim(); if (!text || ai.busy) return;
+  if (!aiAllowed()) return;
+  aiPush('user', [{text}]); aiLog({who:'me', text}); await aiTurn();
+}
+async function aiTurn(retrying) {
+  ai.busy = true; ai.error = ''; renderAi();
+  try {
+    const r = await API.ai({contents: ai.contents, snapshot: JSON.stringify(aiSnapshot())});
+    const parts = []; if (r.text) parts.push({text: r.text});
+    const calls = (r.calls || []).map((c, i) => ({...c, id: uid()})); calls.forEach(c => parts.push({functionCall: {name: c.name, args: c.args}}));
+    aiPush('model', parts); if (r.text) aiLog({who:'dost', text: r.text});
+    if (calls.length) {
+      const needConfirm = calls.filter(c => AI_CONFIRM.has(c.name));
+      if (needConfirm.length) { ai.pending = calls; aiLog({who:'confirm', calls}); ai.busy = false; renderAi(); return; }
+      await aiRun(calls);
+    }
+  } catch (e) { ai.error = e.message; }
+  ai.busy = false; renderAi();
+}
+async function aiRun(calls) {
+  const responses = [];
+  for (const c of calls) {
+    if (ai.executed.has(c.id)) { responses.push({functionResponse: {name: c.name, response: {result: 'already executed'}}}); continue; }
+    try { const out = await aiExecute(c); ai.executed.add(c.id); if (!out.quiet) aiLog({who:'action', ok:true, text: out.summary, name: c.name}); responses.push({functionResponse: {name: c.name, response: {ok: true, ...out.data}}}); }
+    catch (e) { aiLog({who:'action', ok:false, text: e.message, name: c.name}); responses.push({functionResponse: {name: c.name, response: {ok: false, error: e.message}}}); }
+  }
+  aiPush('user', responses);
+  const r = await API.ai({contents: ai.contents, snapshot: JSON.stringify(aiSnapshot())});
+  const parts = []; if (r.text) parts.push({text: r.text});
+  const more = (r.calls || []).map(c => ({...c, id: uid()})); more.forEach(c => parts.push({functionCall: {name: c.name, args: c.args}}));
+  aiPush('model', parts); if (r.text) aiLog({who:'dost', text: r.text});
+  if (more.length) { if (more.some(c => AI_CONFIRM.has(c.name))) { ai.pending = more; aiLog({who:'confirm', calls: more}); return; } await aiRun(more); }
+}
+async function aiConfirm(yes) {
+  const calls = ai.pending; if (!calls) return; ai.pending = null; ai.busy = true; renderAi();
+  try {
+    if (yes) await aiRun(calls);
+    else { aiPush('user', calls.map(c => ({functionResponse: {name: c.name, response: {ok: false, error: 'User cancelled'}}}))); aiLog({who:'action', ok:false, text:'Cancelled', name:'cancel'}); const r = await API.ai({contents: ai.contents, snapshot: JSON.stringify(aiSnapshot())}); aiPush('model', [{text: r.text || 'Theek hai, cancel.'}]); aiLog({who:'dost', text: r.text || 'Theek hai, cancel.'}); }
+  } catch (e) { ai.error = e.message; }
+  ai.busy = false; renderAi();
+}
+function aiDescribe(c) {
+  const a = c.args || {};
+  if (c.name === 'delete_transaction') { const t = doc(a.id); return t ? `Delete ${money(t.amount)} · ${t.merchant || catOf(t.categoryId).name} · ${niceDate(t.date)}` : 'Delete a transaction'; }
+  if (c.name === 'update_transaction') { const t = doc(a.id); return `Change ${t ? money(t.amount) + ' ' + (t.merchant || catOf(t.categoryId).name) : 'transaction'} → ${Object.entries(a).filter(([k]) => k !== 'id').map(([k,v]) => `${k}: ${k === 'amount' ? money(v) : v}`).join(', ')}`; }
+  if (c.name === 'set_budget') return `Set ${a.category} budget to ${money(a.amount)}/month`;
+  return c.name.replace(/_/g, ' ');
+}
+
+/* ---- UI ---- */
+const AI_SUGGEST = ['Aaj 650 ka khana khaya', 'Is month paisay kahan zyada lag rahay hain?', 'Salary ke baad kitna safely spend kar sakta hoon?', 'Ali ki fees 8,000 pay ki hai, add kar do', 'Mera is hafte ka review kar do', 'Har month 10,000 save karne ka plan bana do'];
+function renderAiPage() {
+  if (!hasFull(state.role)) return pageHead('Dost', '') + emptyCard('Dost is for full-access accounts', 'The AI companion works on your personal finances, which this account does not have.');
+  if (mode() === 'local' && !window.__aiMock) return pageHead('Dost', '') + emptyCard('Dost needs your Google Sheet', 'The AI runs on the server side of your Sheet so the key stays private. Connect a Sheet in Settings and add a Gemini key in Apps Script.');
+  return pageHead('Dost', `<button class="btn sm" data-ai-clear ${ai.log.length ? '' : 'disabled'}>${ic('trash')} Clear chat</button>`, 'Your Gilgiti money friend · talks English or Roman Urdu') + `<div class="chat"><div class="chat-log" id="chatLog"></div><form class="chat-in" id="chatForm"><input id="chatText" placeholder="Yaar, 400 ka petrol add kar do…" autocomplete="off" maxlength="1000" ${ai.busy ? 'disabled' : ''}><button class="btn primary" id="chatSend" ${ai.busy ? 'disabled' : ''} aria-label="Send">${ic('send')}</button></form></div>`;
+}
+function renderAi() {
+  if (route !== 'ai') return; const log = $('#chatLog'); if (!log) { render(); return; }
+  const dostAv = `<span class="ic-tile" style="width:30px;height:30px;background:var(--brand-soft);color:var(--brand)">${ic('bulb')}</span>`;
+  const welcome = `<div class="msg dost">${dostAv}<div class="bubble"><b>Assalam o alaikum, ${esc(auth.name)}!</b> Main Dost hoon, tumhara money wala yaar. Expense bolo, main add kar dunga; ya poocho ke paisay kahan ja rahay hain. ${ai.status === false ? '<span class="neg">Abhi AI key set nahi hai: Apps Script → Project Settings → Script properties → GEMINI_API_KEY.</span>' : ''}</div></div><div class="suggest">${AI_SUGGEST.map(s => `<button class="chip" data-ai-suggest="${esc(s)}">${esc(s)}</button>`).join('')}</div>`;
+  log.innerHTML = welcome + ai.log.map(e => e.who === 'me' ? `<div class="msg me"><div class="bubble">${esc(e.text)}</div></div>`
+    : e.who === 'dost' ? `<div class="msg dost">${dostAv}<div class="bubble">${esc(e.text).replace(/\n/g,'<br>')}</div></div>`
+    : e.who === 'action' ? `<div class="msg sys"><span class="receipt ${e.ok ? 'ok' : 'bad'}">${ic(e.ok ? 'check' : 'alert')} ${esc(e.text)}</span></div>`
+    : e.who === 'confirm' ? `<div class="msg sys"><div class="card confirm-card"><div class="b" style="margin-bottom:6px">Dost wants to:</div>${e.calls.map(c => `<div class="sm">• ${esc(aiDescribe(c))}</div>`).join('')}${ai.pending && ai.pending === e.calls || (ai.pending && ai.pending[0].id === e.calls[0].id) ? `<div class="actions" style="margin-top:10px;justify-content:flex-start"><button class="btn primary sm" data-ai-confirm="1">Confirm</button><button class="btn sm" data-ai-confirm="0">Cancel</button></div>` : `<div class="xs muted" style="margin-top:6px">${e.done || 'answered'}</div>`}</div></div>` : '').join('')
+    + (ai.busy ? `<div class="msg dost">${dostAv}<div class="bubble typing"><i></i><i></i><i></i></div></div>` : '')
+    + (ai.error ? `<div class="msg sys"><span class="receipt bad">${ic('alert')} ${esc(ai.error)} <button class="btn sm" data-ai-retry>Retry</button></span></div>` : '');
+  const inp = $('#chatText'), btn = $('#chatSend'); if (inp) { inp.disabled = ai.busy; btn.disabled = ai.busy; } const clr = $('[data-ai-clear]'); if (clr) clr.disabled = !ai.log.length;
+  log.scrollTop = log.scrollHeight;
+}
+document.addEventListener('submit', ev => { if (ev.target.id !== 'chatForm') return; ev.preventDefault(); const v = $('#chatText').value; $('#chatText').value = ''; aiSend(v); });
+document.addEventListener('click', async ev => {
+  const t = ev.target.closest('[data-ai-suggest],[data-ai-confirm],[data-ai-clear],[data-ai-retry]'); if (!t) return; const d = t.dataset;
+  if (d.aiSuggest) aiSend(d.aiSuggest);
+  else if (d.aiConfirm !== undefined) aiConfirm(d.aiConfirm === '1');
+  else if ('aiClear' in d) { if (await confirmAsync('Clear this chat?', 'Dost forgets this conversation. Your transactions are not affected.', 'Clear')) { ai.contents = []; ai.log = []; ai.pending = null; ai.error = ''; aiSave(); renderAi(); } }
+  else if ('aiRetry' in d) { ai.error = ''; const last = ai.contents[ai.contents.length - 1]; if (last && last.role === 'user') aiTurn(true); else renderAi(); }
+});
 /* ---- Boot ---- */
 refresh();
 setInterval(() => { if (mode() !== 'local' && document.visibilityState === 'visible') refresh(true); }, 45000);
